@@ -42,13 +42,17 @@
         }
         #downloadBtn {
             margin-top: 20px;
-            display: none;
         }
         .preview {
             margin-top: 20px;
             padding: 10px;
             border: 1px solid #ddd;
             background-color: #f9f9f9;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -106,6 +110,7 @@
     </div>
 
     <button onclick="generateVCard()">Сгенерировать QR-код</button>
+    <div id="errorMessage" class="error" style="display: none;"></div>
 
     <div class="preview" id="previewContainer" style="display: none;">
         <h3>Предпросмотр VCard:</h3>
@@ -119,77 +124,127 @@
     </div>
 
     <script>
-        let qrcode = null;
+        function displayError(message) {
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+        
+        function clearError() {
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.textContent = '';
+            errorElement.style.display = 'none';
+        }
         
         function generateVCard() {
-            const name = document.getElementById('name').value;
-            const company = document.getElementById('company').value;
-            const title = document.getElementById('title').value;
-            const phone = document.getElementById('phone').value;
-            const workPhone = document.getElementById('workPhone').value;
-            const email = document.getElementById('email').value;
-            const website = document.getElementById('website').value;
-            const telegram = document.getElementById('telegram').value;
-            const address = document.getElementById('address').value;
-            const note = document.getElementById('note').value;
+            clearError();
             
-            // Создаем VCard в формате 3.0
-            let vCardText = 'BEGIN:VCARD\nVERSION:3.0\n';
-            
-            if (name) vCardText += `FN:${name}\n`;
-            if (name) vCardText += `N:${name.split(' ').reverse().join(';')};;;\n`;
-            if (company) vCardText += `ORG:${company}\n`;
-            if (title) vCardText += `TITLE:${title}\n`;
-            if (phone) vCardText += `TEL;TYPE=CELL:${phone}\n`;
-            if (workPhone) vCardText += `TEL;TYPE=WORK:${workPhone}\n`;
-            if (email) vCardText += `EMAIL:${email}\n`;
-            if (website) vCardText += `URL:${website}\n`;
-            if (telegram) {
-                // Добавляем Telegram как X-SOCIALPROFILE
-                vCardText += `X-SOCIALPROFILE;TYPE=telegram:${telegram}\n`;
-                // Также добавим как обычное поле, для лучшей совместимости
-                vCardText += `X-TELEGRAM:${telegram}\n`;
+            try {
+                // Проверяем, загружена ли библиотека QRCode
+                if (typeof QRCode === 'undefined') {
+                    displayError('Ошибка: библиотека QRCode не загружена. Проверьте подключение к интернету и перезагрузите страницу.');
+                    return;
+                }
+                
+                const name = document.getElementById('name').value;
+                const company = document.getElementById('company').value;
+                const title = document.getElementById('title').value;
+                const phone = document.getElementById('phone').value;
+                const workPhone = document.getElementById('workPhone').value;
+                const email = document.getElementById('email').value;
+                const website = document.getElementById('website').value;
+                const telegram = document.getElementById('telegram').value;
+                const address = document.getElementById('address').value;
+                const note = document.getElementById('note').value;
+                
+                // Создаем VCard в формате 3.0
+                let vCardText = 'BEGIN:VCARD\nVERSION:3.0\n';
+                
+                if (name) vCardText += `FN:${name}\n`;
+                if (name) {
+                    const nameParts = name.split(' ');
+                    if (nameParts.length > 1) {
+                        vCardText += `N:${nameParts[1]};${nameParts[0]};;;\n`;
+                    } else {
+                        vCardText += `N:${name};;;;\n`;
+                    }
+                }
+                if (company) vCardText += `ORG:${company}\n`;
+                if (title) vCardText += `TITLE:${title}\n`;
+                if (phone) vCardText += `TEL;TYPE=CELL:${phone}\n`;
+                if (workPhone) vCardText += `TEL;TYPE=WORK:${workPhone}\n`;
+                if (email) vCardText += `EMAIL:${email}\n`;
+                if (website) vCardText += `URL:${website}\n`;
+                if (telegram) {
+                    // Добавляем Telegram как X-SOCIALPROFILE
+                    vCardText += `X-SOCIALPROFILE;TYPE=telegram:${telegram}\n`;
+                    // Также добавим как обычное поле, для лучшей совместимости
+                    vCardText += `X-TELEGRAM:${telegram}\n`;
+                }
+                if (address) vCardText += `ADR;TYPE=WORK:;;${address};;;;\n`;
+                if (note) vCardText += `NOTE:${note}\n`;
+                
+                vCardText += 'END:VCARD';
+                
+                // Отображаем предпросмотр VCard
+                document.getElementById('vcardPreview').textContent = vCardText;
+                document.getElementById('previewContainer').style.display = 'block';
+                
+                // Создаем QR-код
+                const qrcodeContainer = document.getElementById('qrcode');
+                qrcodeContainer.innerHTML = ''; // очищаем контейнер перед созданием нового QR-кода
+                
+                // Используем try-catch здесь, чтобы поймать возможные ошибки при создании QR-кода
+                try {
+                    new QRCode(qrcodeContainer, {
+                        text: vCardText,
+                        width: 256,
+                        height: 256,
+                        colorDark: '#000000',
+                        colorLight: '#ffffff',
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                    
+                    // Показываем кнопку скачивания
+                    document.getElementById('downloadContainer').style.display = 'block';
+                } catch (e) {
+                    displayError('Ошибка при генерации QR-кода: ' + e.message);
+                    console.error('Ошибка при генерации QR-кода:', e);
+                }
+            } catch (e) {
+                displayError('Произошла ошибка: ' + e.message);
+                console.error('Ошибка:', e);
             }
-            if (address) vCardText += `ADR;TYPE=WORK:;;${address};;;;\n`;
-            if (note) vCardText += `NOTE:${note}\n`;
-            
-            vCardText += 'END:VCARD';
-            
-            // Отображаем предпросмотр VCard
-            document.getElementById('vcardPreview').textContent = vCardText;
-            document.getElementById('previewContainer').style.display = 'block';
-            
-            // Создаем QR-код
-            const qrcodeContainer = document.getElementById('qrcode');
-            qrcodeContainer.innerHTML = '';
-            
-            qrcode = new QRCode(qrcodeContainer, {
-                text: vCardText,
-                width: 256,
-                height: 256,
-                colorDark: '#000000',
-                colorLight: '#ffffff',
-                correctLevel: QRCode.CorrectLevel.H
-            });
-            
-            // Показываем кнопку скачивания
-            document.getElementById('downloadContainer').style.display = 'block';
         }
         
         function downloadQRCode() {
-            // Получаем изображение QR-кода
-            const img = document.querySelector('#qrcode img');
-            
-            if (img) {
-                // Создаем ссылку для скачивания
-                const link = document.createElement('a');
-                link.download = 'vcard-qrcode.png';
-                link.href = img.src;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+            try {
+                // Получаем изображение QR-кода
+                const img = document.querySelector('#qrcode img');
+                
+                if (img) {
+                    // Создаем ссылку для скачивания
+                    const link = document.createElement('a');
+                    link.download = 'vcard-qrcode.png';
+                    link.href = img.src;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                } else {
+                    displayError('QR-код не найден. Сначала сгенерируйте QR-код.');
+                }
+            } catch (e) {
+                displayError('Ошибка при скачивании QR-кода: ' + e.message);
+                console.error('Ошибка при скачивании:', e);
             }
         }
+
+        // Проверяем загрузку библиотеки при загрузке страницы
+        window.onload = function() {
+            if (typeof QRCode === 'undefined') {
+                displayError('Предупреждение: библиотека QRCode не загружена. Проверьте подключение к интернету и перезагрузите страницу.');
+            }
+        };
     </script>
 </body>
 </html>
