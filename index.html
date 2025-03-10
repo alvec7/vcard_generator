@@ -5,148 +5,417 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Генератор VCard QR-кода</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #2196F3;
+            --primary-dark: #1976D2;
+            --error-color: #f44336;
+            --success-color: #4CAF50;
+            --text-color: #333;
+            --border-radius: 8px;
+            --step-inactive: #e0e0e0;
+            --step-active: var(--primary-color);
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
+            font-family: 'Roboto', Arial, sans-serif;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 20px;
+            background-color: #f5f5f5;
+            color: var(--text-color);
+            line-height: 1.6;
         }
+
+        .form-container {
+            background: white;
+            padding: 30px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .step {
+            flex: 1;
+            text-align: center;
+            padding: 15px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .step-number {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: var(--step-inactive);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            transition: background-color 0.3s;
+        }
+
+        .step.active .step-number {
+            background-color: var(--step-active);
+        }
+
+        .step-title {
+            font-size: 14px;
+            color: var(--text-color);
+        }
+
+        .form-section {
+            display: none;
+        }
+
+        .form-section.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+            position: relative;
         }
+
+        .form-group.required label::after {
+            content: '*';
+            color: var(--error-color);
+            margin-left: 4px;
+        }
+
+        .field-hint {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .validation-message {
+            position: absolute;
+            right: 0;
+            top: 0;
+            font-size: 12px;
+            color: var(--error-color);
+        }
+
+        .preview-container {
+            display: flex;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .qr-options {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: var(--border-radius);
+        }
+
+        .color-picker {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .templates {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .template-card {
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        .template-card:hover {
+            border-color: var(--primary-color);
+        }
+
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .form-container {
+            background: white;
+            padding: 30px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
         label {
             display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-color);
         }
+
         input, textarea {
             width: 100%;
-            padding: 8px;
-            box-sizing: border-box;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            transition: border-color 0.3s ease;
         }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
+        }
+
         button {
-            background-color: #4CAF50;
+            background-color: var(--primary-color);
             color: white;
-            padding: 10px 15px;
+            padding: 12px 24px;
             border: none;
+            border-radius: var(--border-radius);
             cursor: pointer;
             font-size: 16px;
+            font-weight: 500;
+            transition: background-color 0.3s ease;
         }
+
         button:hover {
-            background-color: #45a049;
+            background-color: var(--primary-dark);
         }
+
         #qrcode {
             margin-top: 30px;
-            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        #downloadBtn {
-            margin-top: 20px;
-        }
+
         .preview {
-            margin-top: 20px;
-            padding: 10px;
-            border: 1px solid #ddd;
-            background-color: #f9f9f9;
+            background: white;
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
+
         .error {
-            color: red;
-            font-weight: bold;
+            color: var(--error-color);
+            padding: 10px;
+            border-radius: var(--border-radius);
+            background-color: rgba(244, 67, 54, 0.1);
+            margin: 10px 0;
+        }
+
+        .download-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .secondary-button {
+            background-color: white;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+        }
+
+        .secondary-button:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .icon {
+            margin-right: 8px;
+        }
+
+        .download-hint {
             margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--primary-color);
         }
-        .options {
-            margin-top: 15px;
-            border: 1px solid #ddd;
-            padding: 15px;
-            background-color: #f9f9f9;
-        }
-        .options label {
-            display: inline-block;
-            margin-right: 15px;
-        }
-        .options input {
-            width: auto;
+
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            
+            .form-container {
+                padding: 15px;
+            }
+            
+            input, textarea {
+                padding: 10px;
+            }
+
+            .download-buttons {
+                flex-direction: column;
+            }
+            
+            .download-buttons button {
+                width: 100%;
+            }
+
+            .secondary-button {
+                padding: 15px 24px;
+                font-size: 16px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .icon {
+                font-size: 20px;
+            }
         }
     </style>
 </head>
 <body>
     <h1>Генератор VCard QR-кода</h1>
     
-    <div class="form-group">
-        <label for="name">Имя Фамилия:</label>
-        <input type="text" id="name" placeholder="Иван Иванов">
-    </div>
-
-    <div class="form-group">
-        <label for="company">Название компании:</label>
-        <input type="text" id="company" placeholder="ООО 'Моя Компания'">
-    </div>
-
-    <div class="form-group">
-        <label for="title">Должность:</label>
-        <input type="text" id="title" placeholder="Директор">
-    </div>
-
-    <div class="form-group">
-        <label for="phone">Мобильный телефон:</label>
-        <input type="tel" id="phone" placeholder="+7 (XXX) XXX-XX-XX">
-    </div>
-
-    <div class="form-group">
-        <label for="workPhone">Рабочий телефон:</label>
-        <input type="tel" id="workPhone" placeholder="+7 (XXX) XXX-XX-XX">
-    </div>
-
-    <div class="form-group">
-        <label for="email">Email:</label>
-        <input type="email" id="email" placeholder="example@email.com">
-    </div>
-
-    <div class="form-group">
-        <label for="website">Веб-сайт:</label>
-        <input type="url" id="website" placeholder="https://www.example.com">
-    </div>
-
-    <div class="form-group">
-        <label for="telegram">Telegram:</label>
-        <input type="text" id="telegram" placeholder="@username">
-    </div>
-
-    <div class="form-group">
-        <label for="address">Адрес:</label>
-        <input type="text" id="address" placeholder="г. Москва, ул. Примерная, д. 123">
-    </div>
-
-    <div class="form-group">
-        <label for="note">Краткое описание компании:</label>
-        <textarea id="note" rows="3" placeholder="Мы занимаемся..."></textarea>
-    </div>
-
-    <div class="options">
-        <h3>Параметры QR-кода:</h3>
-        <div>
-            <label for="qr-size">Размер QR-кода:</label>
-            <select id="qr-size">
-                <option value="256">256x256 px</option>
-                <option value="300" selected>300x300 px</option>
-                <option value="400">400x400 px</option>
-                <option value="512">512x512 px</option>
-            </select>
+    <div class="form-container">
+        <div class="steps">
+            <div class="step active" data-step="1">
+                <div class="step-number">1</div>
+                <div class="step-title">Основная информация</div>
+            </div>
+            <div class="step" data-step="2">
+                <div class="step-number">2</div>
+                <div class="step-title">Контактные данные</div>
+            </div>
+            <div class="step" data-step="3">
+                <div class="step-number">3</div>
+                <div class="step-title">Дополнительно</div>
+            </div>
+            <div class="step" data-step="4">
+                <div class="step-number">4</div>
+                <div class="step-title">Генерация QR-кода</div>
+            </div>
         </div>
-    </div>
 
-    <button onclick="generateVCard()">Сгенерировать QR-код</button>
-    <div id="errorMessage" class="error" style="display: none;"></div>
+        <!-- Шаг 1: Основная информация -->
+        <div class="form-section active" data-section="1">
+            <div class="form-group required">
+                <label for="name">Имя Фамилия:</label>
+                <input type="text" id="name" placeholder="Иван Иванов">
+                <div class="field-hint">Введите ваше полное имя</div>
+            </div>
 
-    <div class="preview" id="previewContainer" style="display: none;">
-        <h3>Предпросмотр VCard:</h3>
-        <pre id="vcardPreview"></pre>
-    </div>
+            <div class="form-group">
+                <label for="company">Название компании:</label>
+                <input type="text" id="company" placeholder="ООО 'Моя Компания'">
+            </div>
 
-    <div id="qrcode"></div>
-    
-    <div id="downloadContainer" style="text-align: center; margin-top: 20px; display: none;">
-        <button id="downloadBtn" onclick="downloadQRCode()">Скачать QR-код</button>
+            <div class="form-group">
+                <label for="title">Должность:</label>
+                <input type="text" id="title" placeholder="Директор">
+            </div>
+        </div>
+
+        <!-- Шаг 2: Контактные данные -->
+        <div class="form-section" data-section="2">
+            <div class="form-group">
+                <label for="phone">Мобильный телефон:</label>
+                <input type="tel" id="phone" placeholder="+7 (XXX) XXX-XX-XX">
+                <div class="field-hint">Формат: +7 (XXX) XXX-XX-XX</div>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" placeholder="example@email.com">
+            </div>
+
+            <div class="form-group">
+                <label for="telegram">Telegram:</label>
+                <input type="text" id="telegram" placeholder="@username">
+            </div>
+        </div>
+
+        <!-- Шаг 3: Дополнительная информация -->
+        <div class="form-section" data-section="3">
+            <div class="form-group">
+                <label for="website">Веб-сайт:</label>
+                <input type="url" id="website" placeholder="https://www.example.com">
+            </div>
+
+            <div class="form-group">
+                <label for="address">Адрес:</label>
+                <input type="text" id="address" placeholder="г. Москва, ул. Примерная, д. 123">
+            </div>
+
+            <div class="form-group">
+                <label for="note">Краткое описание:</label>
+                <textarea id="note" rows="3" placeholder="Мы занимаемся..."></textarea>
+            </div>
+        </div>
+
+        <!-- Шаг 4: Генерация QR-кода -->
+        <div class="form-section" data-section="4">
+            <div class="qr-options">
+                <h3>Настройки QR-кода</h3>
+                <div class="color-picker">
+                    <label for="qr-color">Цвет QR-кода:</label>
+                    <input type="color" id="qr-color" value="#000000">
+                </div>
+                <div class="color-picker">
+                    <label for="qr-background">Цвет фона:</label>
+                    <input type="color" id="qr-background" value="#ffffff">
+                </div>
+            </div>
+
+            <div class="preview-container">
+                <div id="qrcode"></div>
+                <div class="preview" id="previewContainer">
+                    <h3>Предпросмотр VCard:</h3>
+                    <pre id="vcardPreview"></pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="navigation-buttons">
+            <button id="prevBtn" onclick="prevStep()" style="display: none;">Назад</button>
+            <button id="nextBtn" onclick="nextStep()">Далее</button>
+            <button id="generateBtn" onclick="generateVCard()" style="display: none;">Сгенерировать QR-код</button>
+        </div>
+
+        <div id="errorMessage" class="error" style="display: none;"></div>
+        
+        <div id="downloadContainer" style="text-align: center; margin-top: 20px; display: none;">
+            <div class="download-buttons">
+                <button id="downloadBtn" onclick="downloadQRCode()">Скачать QR-код</button>
+                <button id="downloadVCardBtn" onclick="downloadVCard()" class="secondary-button">
+                    <span class="icon">📇</span> Сохранить контакт
+                </button>
+            </div>
+            <div class="download-hint">
+                Сохраните контакт для добавления в телефонную книгу
+            </div>
+        </div>
     </div>
 
     <script>
@@ -162,121 +431,131 @@
             errorElement.style.display = 'none';
         }
         
-        // Функция для создания простого QR-кода с URL, который ведет на страницу с данными vCard
-        function generateSimpleQR(vCardText) {
-            const qrcodeContainer = document.getElementById('qrcode');
-            qrcodeContainer.innerHTML = '';
+        function escapeVCardField(value) {
+            return value
+                .replace(/[\\;,]/g, '\\$&')
+                .replace(/\n/g, '\\n');
+        }
+
+        function validateFields() {
+            const name = document.getElementById('name').value;
+            if (!name) {
+                throw new Error('Имя является обязательным полем');
+            }
             
-            // Конвертируем vCard в Base64
-            const vCardBase64 = btoa(unescape(encodeURIComponent(vCardText)));
+            const email = document.getElementById('email').value;
+            if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                throw new Error('Неверный формат email');
+            }
             
-            // Создаем короткую HTML-страницу со ссылкой на данные
-            const htmlContent = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <title>Контактные данные</title>
-                <style>
-                    body { font-family: Arial; text-align: center; margin: 20px; }
-                    .button { 
-                        background-color: #4CAF50; 
-                        color: white; 
-                        padding: 10px 20px; 
-                        text-decoration: none; 
-                        border-radius: 4px; 
-                        display: inline-block; 
-                        margin-top: 20px; 
-                    }
-                </style>
-            </head>
-            <body>
-                <h1>Контактные данные</h1>
-                <p>Нажмите кнопку ниже, чтобы сохранить контакт</p>
-                <a class="button" href="data:text/vcard;base64,${vCardBase64}" download="contact.vcf">Сохранить контакт</a>
-            </body>
-            </html>`;
-            
-            // Преобразуем HTML в Data URL
-            const dataURL = 'data:text/html;charset=utf-8,' + encodeURIComponent(htmlContent);
-            
-            // Генерируем QR-код с URL
-            try {
-                const size = parseInt(document.getElementById('qr-size').value);
-                new QRCode(qrcodeContainer, {
-                    text: dataURL,
-                    width: size,
-                    height: size,
-                    colorDark: '#000000',
-                    colorLight: '#ffffff',
-                    correctLevel: QRCode.CorrectLevel.L // Используем уровень L для уменьшения количества данных
-                });
-                return true;
-            } catch (e) {
-                console.error('Ошибка при генерации простого QR-кода:', e);
-                return false;
+            const phone = document.getElementById('phone').value;
+            if (phone && !/^\+?[\d\s-()]+$/.test(phone)) {
+                throw new Error('Неверный формат телефона');
             }
         }
-        
+
+        // Добавим функцию определения устройства
+        function detectDevice() {
+            const userAgent = navigator.userAgent.toLowerCase();
+            if (userAgent.includes('iphone') || userAgent.includes('ipad') || userAgent.includes('ipod')) {
+                return 'ios';
+            } else if (userAgent.includes('android')) {
+                return 'android';
+            }
+            return 'desktop';
+        }
+
+        // Обновим функцию generateVCard
         function generateVCard() {
             clearError();
             
-            if (typeof QRCode === 'undefined') {
-                displayError('Ошибка: библиотека QRCode не загружена. Проверьте подключение к интернету и перезагрузите страницу.');
-                return;
-            }
-            
             try {
-                const name = document.getElementById('name').value;
-                const company = document.getElementById('company').value;
-                const title = document.getElementById('title').value;
-                const phone = document.getElementById('phone').value;
-                const workPhone = document.getElementById('workPhone').value;
-                const email = document.getElementById('email').value;
-                const website = document.getElementById('website').value;
-                const telegram = document.getElementById('telegram').value;
-                const address = document.getElementById('address').value;
-                const note = document.getElementById('note').value;
+                validateFields();
                 
-                // Создаем VCard в формате 3.0
+                // Получаем значения полей
+                const fields = {
+                    name: document.getElementById('name').value,
+                    company: document.getElementById('company').value,
+                    title: document.getElementById('title').value,
+                    phone: document.getElementById('phone').value,
+                    email: document.getElementById('email').value,
+                    website: document.getElementById('website').value,
+                    telegram: document.getElementById('telegram').value,
+                    address: document.getElementById('address').value,
+                    note: document.getElementById('note').value
+                };
+
+                // Создаем VCard с экранированными значениями
                 let vCardText = 'BEGIN:VCARD\nVERSION:3.0\n';
                 
-                if (name) {
-                    vCardText += `FN:${name}\n`;
-                    const nameParts = name.split(' ');
-                    if (nameParts.length > 1) {
-                        vCardText += `N:${nameParts[1]};${nameParts[0]};;;\n`;
-                    } else {
-                        vCardText += `N:${name};;;;\n`;
-                    }
+                if (fields.name) {
+                    vCardText += `FN:${escapeVCardField(fields.name)}\n`;
+                    const nameParts = fields.name.split(' ');
+                    vCardText += nameParts.length > 1 
+                        ? `N:${escapeVCardField(nameParts[1])};${escapeVCardField(nameParts[0])};;;\n`
+                        : `N:${escapeVCardField(fields.name)};;;;\n`;
                 }
-                if (company) vCardText += `ORG:${company}\n`;
-                if (title) vCardText += `TITLE:${title}\n`;
-                if (phone) vCardText += `TEL;TYPE=CELL:${phone}\n`;
-                if (workPhone) vCardText += `TEL;TYPE=WORK:${workPhone}\n`;
-                if (email) vCardText += `EMAIL:${email}\n`;
-                if (website) vCardText += `URL:${website}\n`;
-                if (telegram) vCardText += `X-TELEGRAM:${telegram}\n`;
-                if (address) vCardText += `ADR;TYPE=WORK:;;${address};;;;\n`;
-                if (note) vCardText += `NOTE:${note}\n`;
+                
+                if (fields.company) vCardText += `ORG:${escapeVCardField(fields.company)}\n`;
+                if (fields.title) vCardText += `TITLE:${escapeVCardField(fields.title)}\n`;
+                if (fields.phone) vCardText += `TEL;TYPE=CELL:${escapeVCardField(fields.phone)}\n`;
+                if (fields.email) vCardText += `EMAIL:${escapeVCardField(fields.email)}\n`;
+                if (fields.website) vCardText += `URL:${escapeVCardField(fields.website)}\n`;
+                if (fields.telegram) {
+                    vCardText += `X-SOCIALPROFILE;TYPE=telegram:${escapeVCardField(fields.telegram)}\n`;
+                    vCardText += `X-TELEGRAM:${escapeVCardField(fields.telegram)}\n`;
+                }
+                if (fields.address) vCardText += `ADR;TYPE=WORK:;;${escapeVCardField(fields.address)};;;;\n`;
+                if (fields.note) vCardText += `NOTE:${escapeVCardField(fields.note)}\n`;
                 
                 vCardText += 'END:VCARD';
-                
-                // Отображаем предпросмотр VCard
+
+                // Проверяем размер данных
+                if (vCardText.length > 1000) {
+                    throw new Error('Слишком много данных для QR-кода. Пожалуйста, сократите информацию.');
+                }
+
                 document.getElementById('vcardPreview').textContent = vCardText;
                 document.getElementById('previewContainer').style.display = 'block';
-                
-                // Пробуем создать QR-код с альтернативным подходом
-                const success = generateSimpleQR(vCardText);
-                
-                if (success) {
-                    // Показываем кнопку скачивания
-                    document.getElementById('downloadContainer').style.display = 'block';
-                } else {
-                    displayError('Не удалось создать QR-код. Возможно, слишком много данных.');
+
+                const qrcodeContainer = document.getElementById('qrcode');
+                qrcodeContainer.innerHTML = '';
+
+                new QRCode(qrcodeContainer, {
+                    text: vCardText,
+                    width: 256,
+                    height: 256,
+                    colorDark: '#000000',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.M // Изменен уровень коррекции для баланса между размером и надежностью
+                });
+
+                document.getElementById('downloadContainer').style.display = 'block';
+
+                // Добавляем специфичные инструкции для разных устройств
+                const device = detectDevice();
+                const downloadHint = document.querySelector('.download-hint');
+                const downloadBtn = document.getElementById('downloadVCardBtn');
+
+                switch(device) {
+                    case 'ios':
+                        downloadHint.innerHTML = 
+                            'Нажмите "Сохранить контакт" и выберите "Добавить контакт" в появившемся меню iOS';
+                        downloadBtn.innerHTML = '<span class="icon">📱</span> Открыть в Контактах iOS';
+                        break;
+                    case 'android':
+                        downloadHint.innerHTML = 
+                            'Нажмите "Сохранить контакт" для добавления в контакты Android';
+                        downloadBtn.innerHTML = '<span class="icon">📱</span> Добавить в контакты Android';
+                        break;
+                    default:
+                        downloadHint.innerHTML = 
+                            'Скачайте файл контакта и импортируйте его в вашу адресную книгу';
+                        downloadBtn.innerHTML = '<span class="icon">📇</span> Скачать файл контакта';
                 }
+
             } catch (e) {
-                displayError('Произошла ошибка: ' + e.message);
+                displayError(e.message);
                 console.error('Ошибка:', e);
             }
         }
@@ -300,6 +579,38 @@
             } catch (e) {
                 displayError('Ошибка при скачивании QR-кода: ' + e.message);
                 console.error('Ошибка при скачивании:', e);
+            }
+        }
+
+        function downloadVCard() {
+            try {
+                const vCardText = document.getElementById('vcardPreview').textContent;
+                if (!vCardText) {
+                    throw new Error('Сначала сгенерируйте контакт');
+                }
+
+                const device = detectDevice();
+                const blob = new Blob([vCardText], { type: 'text/vcard' });
+                const url = window.URL.createObjectURL(blob);
+                const name = document.getElementById('name').value.replace(/\s+/g, '_') || 'contact';
+
+                if (device === 'ios' || device === 'android') {
+                    // Для мобильных устройств открываем файл напрямую
+                    window.location.href = url;
+                } else {
+                    // Для десктопа сохраняем файл
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `${name}.vcf`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+
+                window.URL.revokeObjectURL(url);
+            } catch (e) {
+                displayError('Ошибка при сохранении контакта: ' + e.message);
+                console.error('Ошибка при сохранении контакта:', e);
             }
         }
 
