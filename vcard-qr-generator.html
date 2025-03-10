@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Генератор VCard QR-кода</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #qrcode {
+            margin-top: 30px;
+            text-align: center;
+        }
+        #downloadBtn {
+            margin-top: 20px;
+            display: none;
+        }
+        .preview {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <h1>Генератор VCard QR-кода</h1>
+    
+    <div class="form-group">
+        <label for="name">Имя Фамилия:</label>
+        <input type="text" id="name" placeholder="Иван Иванов">
+    </div>
+
+    <div class="form-group">
+        <label for="company">Название компании:</label>
+        <input type="text" id="company" placeholder="ООО 'Моя Компания'">
+    </div>
+
+    <div class="form-group">
+        <label for="title">Должность:</label>
+        <input type="text" id="title" placeholder="Директор">
+    </div>
+
+    <div class="form-group">
+        <label for="phone">Мобильный телефон:</label>
+        <input type="tel" id="phone" placeholder="+7 (XXX) XXX-XX-XX">
+    </div>
+
+    <div class="form-group">
+        <label for="workPhone">Рабочий телефон:</label>
+        <input type="tel" id="workPhone" placeholder="+7 (XXX) XXX-XX-XX">
+    </div>
+
+    <div class="form-group">
+        <label for="email">Email:</label>
+        <input type="email" id="email" placeholder="example@email.com">
+    </div>
+
+    <div class="form-group">
+        <label for="website">Веб-сайт:</label>
+        <input type="url" id="website" placeholder="https://www.example.com">
+    </div>
+
+    <div class="form-group">
+        <label for="telegram">Telegram:</label>
+        <input type="text" id="telegram" placeholder="@username">
+    </div>
+
+    <div class="form-group">
+        <label for="address">Адрес:</label>
+        <input type="text" id="address" placeholder="г. Москва, ул. Примерная, д. 123">
+    </div>
+
+    <div class="form-group">
+        <label for="note">Краткое описание компании:</label>
+        <textarea id="note" rows="3" placeholder="Мы занимаемся..."></textarea>
+    </div>
+
+    <button onclick="generateVCard()">Сгенерировать QR-код</button>
+
+    <div class="preview" id="previewContainer" style="display: none;">
+        <h3>Предпросмотр VCard:</h3>
+        <pre id="vcardPreview"></pre>
+    </div>
+
+    <div id="qrcode"></div>
+    
+    <div id="downloadContainer" style="text-align: center; margin-top: 20px; display: none;">
+        <button id="downloadBtn" onclick="downloadQRCode()">Скачать QR-код</button>
+    </div>
+
+    <script>
+        let qrcode = null;
+        
+        function generateVCard() {
+            const name = document.getElementById('name').value;
+            const company = document.getElementById('company').value;
+            const title = document.getElementById('title').value;
+            const phone = document.getElementById('phone').value;
+            const workPhone = document.getElementById('workPhone').value;
+            const email = document.getElementById('email').value;
+            const website = document.getElementById('website').value;
+            const telegram = document.getElementById('telegram').value;
+            const address = document.getElementById('address').value;
+            const note = document.getElementById('note').value;
+            
+            // Создаем VCard в формате 3.0
+            let vCardText = 'BEGIN:VCARD\nVERSION:3.0\n';
+            
+            if (name) vCardText += `FN:${name}\n`;
+            if (name) vCardText += `N:${name.split(' ').reverse().join(';')};;;\n`;
+            if (company) vCardText += `ORG:${company}\n`;
+            if (title) vCardText += `TITLE:${title}\n`;
+            if (phone) vCardText += `TEL;TYPE=CELL:${phone}\n`;
+            if (workPhone) vCardText += `TEL;TYPE=WORK:${workPhone}\n`;
+            if (email) vCardText += `EMAIL:${email}\n`;
+            if (website) vCardText += `URL:${website}\n`;
+            if (telegram) {
+                // Добавляем Telegram как X-SOCIALPROFILE
+                vCardText += `X-SOCIALPROFILE;TYPE=telegram:${telegram}\n`;
+                // Также добавим как обычное поле, для лучшей совместимости
+                vCardText += `X-TELEGRAM:${telegram}\n`;
+            }
+            if (address) vCardText += `ADR;TYPE=WORK:;;${address};;;;\n`;
+            if (note) vCardText += `NOTE:${note}\n`;
+            
+            vCardText += 'END:VCARD';
+            
+            // Отображаем предпросмотр VCard
+            document.getElementById('vcardPreview').textContent = vCardText;
+            document.getElementById('previewContainer').style.display = 'block';
+            
+            // Создаем QR-код
+            const qrcodeContainer = document.getElementById('qrcode');
+            qrcodeContainer.innerHTML = '';
+            
+            qrcode = new QRCode(qrcodeContainer, {
+                text: vCardText,
+                width: 256,
+                height: 256,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+            
+            // Показываем кнопку скачивания
+            document.getElementById('downloadContainer').style.display = 'block';
+        }
+        
+        function downloadQRCode() {
+            // Получаем изображение QR-кода
+            const img = document.querySelector('#qrcode img');
+            
+            if (img) {
+                // Создаем ссылку для скачивания
+                const link = document.createElement('a');
+                link.download = 'vcard-qrcode.png';
+                link.href = img.src;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+    </script>
+</body>
+</html>
